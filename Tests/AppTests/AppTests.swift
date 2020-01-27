@@ -1,5 +1,7 @@
-import App
+@testable import App
+import Vapor
 import XCTest
+import FluentPostgreSQL
 
 final class AppTests: XCTestCase {
     func testNothing() throws {
@@ -28,9 +30,9 @@ final class AppTests: XCTestCase {
       let conn = try app.newConnection(to: .psql).wait()
 
       // 4
-      let user = User(name: expectedName, username: expectedUsername)
+      let user = User(id: nil, name: "Will", email: "mail@mail.com", passwordHash: "123")
       let savedUser = try user.save(on: conn).wait()
-      _ = try User(name: "Luke", username: "lukes").save(on: conn).wait()
+      //_ = try User(name: "Luke", username: "lukes").save(on: conn).wait()
 
       // 5
       let responder = try app.make(Responder.self)
