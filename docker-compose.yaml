@@ -1,10 +1,34 @@
+# - docker exec -it  /bin/bash
+# docker-compose exec api /bin/bash
 version: "3"
-services: 
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vapor-server
+    environment:
+      SLEEP_LENGTH: 5
+      POSTGRES_HOST: db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: test
+    ports:
+      - 81:80
+    depends_on:
+      - "db"
+    volumes:
+      - ./Sources/:/app/Sources/
   db:
     image: postgres
-    ports:
-      - 5432:5432
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
       POSTGRES_DB: test
+    ports:
+      - 5429:5432
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data/
+      #- ../../sql_init/:/docker-entrypoint-initdb.d/
+volumes:
+  postgres_data_prod:

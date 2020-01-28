@@ -17,7 +17,7 @@ final class UserController {
     }
     
     /// Creates a new user.
-    func create(_ req: Request) throws -> Future<UserResponse> {
+    func create(_ req: Request) throws -> Future<CreateUserResponse> {
         // decode request content
         return try req.content.decode(CreateUserRequest.self).flatMap { user -> Future<User> in
             // verify that passwords match
@@ -32,7 +32,7 @@ final class UserController {
                 .save(on: req)
         }.map { user in
             // map to public user response (omits password hash)
-            return try UserResponse(id: user.requireID(), name: user.name, email: user.email)
+            return try CreateUserResponse(id: user.requireID(), name: user.name, email: user.email)
         }
     }
 }
@@ -55,7 +55,7 @@ struct CreateUserRequest: Content {
 }
 
 /// Public representation of user data.
-struct UserResponse: Content {
+struct CreateUserResponse: Content {
     /// User's unique identifier.
     /// Not optional since we only return users that exist in the DB.
     var id: Int

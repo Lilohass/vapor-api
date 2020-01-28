@@ -1,4 +1,5 @@
 @testable import App
+//import App
 import Vapor
 import XCTest
 import FluentPostgreSQL
@@ -14,47 +15,46 @@ final class AppTests: XCTestCase {
     ]
     
     func testUsersCanBeRetrievedFromAPI() throws {
-      // 1
-      let expectedName = "Alice"
-      let expectedUsername = "alice"
+        // Boot
+        var config = Config.default()
+        var services = Services.default()
+        var env = Environment.testing
+        try App.configure(&config, &env, &services)
+        let app = try Application(config: config, environment: env, services: services)
+        try App.boot(app)
 
-      // 2
-      var config = Config.default()
-      var services = Services.default()
-      var env = Environment.testing
-      try App.configure(&config, &env, &services)
-      let app = try Application(config: config, environment: env, services: services)
-      try App.boot(app)
+        // Connect to DB
+        let conn = try app.newConnection(to: .psql).wait()
 
-      // 3
-      let conn = try app.newConnection(to: .psql).wait()
+        // Delete all Todos
+        let some = Todo.query(on: conn).all()
+        try some.wait().forEach { todo in
+            try todo.delete(on: conn).wait()
+        }
+        
+        // Add a new Todo
+        let expectedName = "Alice"
+        let todo = Todo(id: nil, title: expectedName)
+        let savedTodo = try todo.save(on: conn).wait()
 
-      // 4
-      let user = User(id: nil, name: "Will", email: "mail@mail.com", passwordHash: "123")
-      let savedUser = try user.save(on: conn).wait()
-      //_ = try User(name: "Luke", username: "lukes").save(on: conn).wait()
+        // Create Request
+        let request = HTTPRequest(method: .GET, url: URL(string: "/todos")!)
+        let wrappedRequest = Request(http: request, using: app)
 
-      // 5
-      let responder = try app.make(Responder.self)
+        // Response
+        let responder = try app.make(Responder.self)
+        let response = try responder.respond(to: wrappedRequest).wait()
 
-      // 6
-      let request = HTTPRequest(method: .GET, url: URL(string: "/api/users")!)
-      let wrappedRequest = Request(http: request, using: app)
+        // Response Data
+        let data = response.http.body.data
+        let todos = try JSONDecoder().decode([Todo].self, from: data!)
 
-      // 7
-      let response = try responder.respond(to: wrappedRequest).wait()
+        // Assertion
+        XCTAssertEqual(todos.count, 1)
+        XCTAssertEqual(todos[0].title, expectedName)
+        XCTAssertEqual(todos[0].id, savedTodo.id)
 
-      // 8
-      let data = response.http.body.data
-      let users = try JSONDecoder().decode([User].self, from: data!)
-
-      // 9
-      XCTAssertEqual(users.count, 2)
-      XCTAssertEqual(users[0].name, expectedName)
-      XCTAssertEqual(users[0].username, expectedUsername)
-      XCTAssertEqual(users[0].id, savedUser.id)
-
-      // 10
-      conn.close()
+        // Close
+        conn.close()
     }
 }
