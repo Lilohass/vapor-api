@@ -7,8 +7,8 @@ import FluentPostgreSQL
 extension Routes.Users: UserEndpoint { }
 extension Routes.Login: LoginEndpoint { }
 
-extension CreateUserResponse {
-    func belongsTo(request: CreateUserRequest) -> Bool {
+extension CreateUserResponseContent {
+    func belongsTo(request: CreateUserRequestContent) -> Bool {
         request.name == name
             && request.email == email
     }
@@ -18,10 +18,7 @@ extension CreateUserResponse {
 final class LoginTests: XCTestCase {
 
     private func deleteAllUsers(conn: PostgreSQLConnection) throws {
-        try UserToken.query(on: conn).all().wait()
-            .forEach { userToken in
-                try userToken.delete(on: conn).wait()
-            }
+        try UserToken.query(on: conn, withSoftDeleted: true).delete(force: true).wait()
         let users = User.query(on: conn).all()
         try users.wait().forEach { user in
             try user.delete(on: conn).wait()
@@ -39,7 +36,7 @@ final class LoginTests: XCTestCase {
         let user = User(id: nil, name: "William", email: "mail@mail.com", passwordHash: try BCrypt.hash(userPassword))
         let savedUser = try user.save(on: conn).wait()
         
-        let loginRequest = LoginRequest(email: user.email, password: userPassword)
+        let loginRequest = LoginRequestContent(email: user.email, password: userPassword)
         let loginEndpoint = API.Login<Routes.Login>.login(loginRequest)
         // Get Response
         let response = try app.getResponse(request: try loginEndpoint.request())
@@ -54,6 +51,9 @@ final class LoginTests: XCTestCase {
                 print("")
             }
         } catch let responseError as ResponseError {
+            /*if response.status == .unauthorized {
+                
+            }*/
             XCTFail("Failed creating user: \(responseError.reason)")
         } catch {
             XCTFail("Failed decoding data: \(String(data: responseData, encoding: .utf8)!)")
@@ -71,7 +71,7 @@ final class LoginTests: XCTestCase {
         conn.close()
 
         // Request Body
-        let newUserRequest = CreateUserRequest(name: "William", email: "mail@mail.com", password: "1234")
+        let newUserRequest = CreateUserRequestContent(name: "William", email: "mail@mail.com", password: "1234")
         
         // Enpoint Request
         let createUserEndpoint = API.User<Routes.Users>.createUser(newUserRequest)

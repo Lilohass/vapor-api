@@ -7,7 +7,7 @@ protocol TodosEndpoint: APIEndpoint {
 
 extension API {
     enum Todos<Endpoint: TodosEndpoint> {
-        case createTodo(CreateTodoRequest)
+        case createTodo(CreateTodoRequestContent)
     }
 }
 
@@ -20,21 +20,21 @@ extension API.Todos: APIRequest {
     }
     
     enum Parser: APIResponseParser {
-        case createTodo(CreateTodoResponse)
+        case createTodo(CreateTodoResponseContent)
     }
 
     func parseObject(data: Data) throws -> Parser {
         switch self {
         case .createTodo:
-            return Parser.createTodo(try JSONEnvelope<CreateTodoResponse>.envelope(data))
+            return Parser.createTodo(try JSONEnvelope<CreateTodoResponseContent>.envelope(data))
         }
     }
 }
 
-struct CreateTodoRequest: Codable {
+struct CreateTodoRequestContent: Codable {
     let name: String
 }
 
-struct CreateTodoResponse: Codable {
+struct CreateTodoResponseContent: Codable {
     let id: Int
 }

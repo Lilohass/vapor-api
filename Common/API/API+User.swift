@@ -7,7 +7,7 @@ protocol UserEndpoint: APIEndpoint {
 
 extension API {
     enum User<Endpoint: UserEndpoint> {
-        case createUser(CreateUserRequest)
+        case createUser(CreateUserRequestContent)
     }
 }
 
@@ -20,18 +20,18 @@ extension API.User: APIRequest {
     }
     
     enum Parser: APIResponseParser {
-        case createUser(CreateUserResponse)
+        case createUser(CreateUserResponseContent)
     }
     
     func parseObject(data: Data) throws -> Parser {
         switch self {
         case .createUser:
-            return Parser.createUser(try JSONEnvelope<CreateUserResponse>.envelope(data))
+            return Parser.createUser(try JSONEnvelope<CreateUserResponseContent>.envelope(data))
         }
     }
 }
 
-struct CreateUserRequest: Codable {
+struct CreateUserRequestContent: Codable {
     let name: String
     let email: String
     let password: String
@@ -44,7 +44,7 @@ struct CreateUserRequest: Codable {
     }
 }
 
-struct CreateUserResponse: Codable {
+struct CreateUserResponseContent: Codable {
     let name: String
     let email: String
     let id: Int

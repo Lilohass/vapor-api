@@ -7,7 +7,7 @@ protocol __Endpoint: APIEndpoint {
 
 extension API {
     enum __<Endpoint: __Endpoint> {
-        case create__(Create__Request)
+        case create__(Create__RequestContent)
     }
 }
 
@@ -20,21 +20,21 @@ extension API.__: APIRequest {
     }
     
     enum Parser: APIResponseParser {
-        case create__(Create__Response)
+        case create__(Create__ResponseContent)
     }
 
     func parseObject(data: Data) throws -> Parser {
         switch self {
         case .create__:
-            return Parser.create__(try JSONEnvelope<Create__Response>.envelope(data))
+            return Parser.create__(try JSONEnvelope<Create__ResponseContent>.envelope(data))
         }
     }
 }
 
-struct Create__Request: Codable {
+struct Create__RequestContent: Codable {
     let name: String
 }
 
-struct Create__Response: Codable {
+struct Create__ResponseContent: Codable {
     let id: Int
 }

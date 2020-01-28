@@ -78,7 +78,7 @@ extension HTTPBody {
 
 extension HTTPRequest {
     
-    static private func post(url: String, headers: HTTPHeaders, body: HTTPBody) -> Self {
+    static func post(url: String, headers: HTTPHeaders, body: HTTPBody) -> Self {
         return HTTPRequest(method: .POST, url: url, headers: headers, body: body)
     }
     
@@ -89,4 +89,5 @@ extension HTTPRequest {
             body: try HTTPBody(body)
         )
     }
+    
 }
