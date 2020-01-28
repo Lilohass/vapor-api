@@ -15,7 +15,9 @@ extension API.Todos: APIRequest {
     func request() throws -> HTTPRequest {
         switch self {
         case .createTodo(let createTodoRequest):
-            return try .jsonPost(url: Endpoint.todos, body: createTodoRequest)
+            return try .jsonPost(url: Endpoint.todos,
+                                 body: createTodoRequest.body,
+                                 authToken: createTodoRequest.token)
         }
     }
     
@@ -31,8 +33,13 @@ extension API.Todos: APIRequest {
     }
 }
 
+struct CreateTodoRequestBody: Codable {
+    let title: String
+}
+
 struct CreateTodoRequestContent: Codable {
-    let name: String
+    let token: String
+    let body: CreateTodoRequestBody
 }
 
 struct CreateTodoResponseContent: Codable {

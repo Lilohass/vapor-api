@@ -82,10 +82,14 @@ extension HTTPRequest {
         return HTTPRequest(method: .POST, url: url, headers: headers, body: body)
     }
     
-    static func jsonPost<T: Codable>(url: String, body: T) throws -> Self {
+    static func jsonPost<T: Codable>(url: String, body: T, authToken: String? = nil) throws -> Self {
+        var headers = HTTPHeaders(contentType: .json)
+        if let authToken = authToken {
+            headers.bearerAuthorization = BearerAuthorization(token: authToken)
+        }
         return .post(
             url: url,
-            headers: HTTPHeaders(contentType: .json),
+            headers: headers,
             body: try HTTPBody(body)
         )
     }

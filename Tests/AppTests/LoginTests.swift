@@ -35,7 +35,9 @@ final class LoginTests: XCTestCase {
         let userPassword = "1234"
         let user = User(id: nil, name: "William", email: "mail@mail.com", passwordHash: try BCrypt.hash(userPassword))
         let savedUser = try user.save(on: conn).wait()
-        
+        guard let savedUserId = savedUser.id else {
+            return XCTFail("Failed creating user")
+        }
         let loginRequest = LoginRequestContent(email: user.email, password: userPassword)
         let loginEndpoint = API.Login<Routes.Login>.login(loginRequest)
         // Get Response
@@ -48,12 +50,9 @@ final class LoginTests: XCTestCase {
         do {
             switch try loginEndpoint.parse(data: responseData) {
             case .login(let loginResponse):
-                print("")
+                XCTAssertEqual(loginResponse.userID, savedUserId)
             }
         } catch let responseError as ResponseError {
-            /*if response.status == .unauthorized {
-                
-            }*/
             XCTFail("Failed creating user: \(responseError.reason)")
         } catch {
             XCTFail("Failed decoding data: \(String(data: responseData, encoding: .utf8)!)")
