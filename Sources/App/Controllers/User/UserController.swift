@@ -18,7 +18,7 @@ struct CreateUserUseCase {
     let db: DatabaseConnectable
 
     func createUser() throws -> Future<User> {
-        // verify that passwords match
+        // verify that passwords match 
         guard user.password == user.verifyPassword else {
             throw Abort(.badRequest, reason: "Password and verification must match.")
         }

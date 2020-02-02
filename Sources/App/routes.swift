@@ -12,6 +12,9 @@ enum Routes {
     enum Todos {
         static let todos: String = "todos"
     }
+    enum Bundle {
+        static let bundles: String = "bundles"
+    }
 }
 
 /// Register your application's routes here.
@@ -42,4 +45,9 @@ public func routes(_ router: Router) throws {
     router.get(Routes.Todos.todos, use: todoController.index)
     bearer.post(Routes.Todos.todos, use: todoController.create)
     bearer.delete(Routes.Todos.todos, Todo.parameter, use: todoController.delete)
+    
+    let bundleController = BundleController()
+    router.get(Routes.Bundle.bundles, use: bundleController.index)
+    bearer.post(Routes.Bundle.bundles, use: bundleController.upload)
+    bearer.delete(Routes.Bundle.bundles, Todo.parameter, use: bundleController.delete)
 }
