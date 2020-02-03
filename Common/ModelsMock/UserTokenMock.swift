@@ -2,7 +2,7 @@ import FluentPostgreSQL
 import Vapor
 @testable import App
 
-enum UserTestGenerator {
+enum UserTokenMock {
     enum UserTokenError: Error {
         case failed
     }

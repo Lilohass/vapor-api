@@ -14,10 +14,10 @@ extension CreateUserResponseContent {
     }
 }
 
+final class LoginTests: AppTesCase {
 
-final class LoginTests: XCTestCase {
-
-    private func deleteAllUsers(conn: PostgreSQLConnection) throws {
+    private func deleteAllUsers() throws {
+        let conn = try dbConnection()
         try UserToken.query(on: conn, withSoftDeleted: true).delete(force: true).wait()
         let users = User.query(on: conn).all()
         try users.wait().forEach { user in
@@ -26,12 +26,9 @@ final class LoginTests: XCTestCase {
     }
     
     func testUserLogin() throws {
-        // Boot
-        let app = try AppMock.defaultTestApp()
-        try App.boot(app)
-        let conn = try app.newConnection(to: .psql).wait()
-        
-        try deleteAllUsers(conn: conn)
+        try deleteAllUsers()
+
+        let conn = try dbConnection()
         let userPassword = "1234"
         let user = User(id: nil, name: "William", email: "mail@mail.com", passwordHash: try BCrypt.hash(userPassword))
         let savedUser = try user.save(on: conn).wait()
@@ -66,7 +63,7 @@ final class LoginTests: XCTestCase {
 
         // Connect to DB
         let conn = try app.newConnection(to: .psql).wait()
-        try deleteAllUsers(conn: conn)
+        try deleteAllUsers()
         conn.close()
 
         // Request Body

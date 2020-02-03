@@ -1,15 +1,14 @@
 import Foundation
 import HTTP
 
-// MARK: - Concrete Types
+// MARK: - API
 enum API { }
 
-struct ResponseError: Codable {
-    let error: Bool
-    let reason: String
-}
 
 // MARK: - Protocols
+protocol APIEndpoint { }
+protocol APIResponseParser { }
+
 protocol APIRequest {
     associatedtype Endpoint: APIEndpoint
     associatedtype Parser: APIResponseParser
@@ -25,30 +24,23 @@ extension APIRequest {
         }
         return try parseObject(data: data)
     }
+
+    func parse(data: Data?) throws -> Parser {
+        guard let data = data else { throw ParseError.dataIsEmpty }
+        return try parse(data: data)
+    }
 }
 
-extension ResponseError: Error {
-    
+// MARK: - Concrete Types
+struct ResponseError: Codable, Error {
+    let error: Bool
+    let reason: String
 }
 
 enum ParseError: Error {
     case dataIsEmpty
     case notImplemented
 }
-
-extension APIRequest {
-    func parse(data: Data?) throws -> Parser {
-        guard let data = data else {
-            throw ParseError.dataIsEmpty
-        }
-        return try parse(data: data)
-    }
-}
-
-protocol APIEndpoint { }
-protocol APIResponseParser { }
-
-
 
 enum JSONEnvelope<T: Codable> {
     typealias ParserEnvelope<T> = (Data) throws -> T
@@ -80,6 +72,14 @@ extension HTTPRequest {
     
     static func post(url: String, headers: HTTPHeaders, body: HTTPBody) -> Self {
         return HTTPRequest(method: .POST, url: url, headers: headers, body: body)
+    }
+    
+    static func delete(url: String, authToken: String? = nil) throws -> Self {
+        var headers = HTTPHeaders()
+        if let authToken = authToken {
+            headers.bearerAuthorization = BearerAuthorization(token: authToken)
+        }
+        return HTTPRequest(method: .DELETE, url: url, headers: headers)
     }
     
     static func jsonPost<T: Codable>(url: String, body: T, authToken: String? = nil) throws -> Self {

@@ -6,46 +6,71 @@ import FluentPostgreSQL
 
 extension Routes.Todos: TodosEndpoint { }
 
-final class TodoTests: XCTestCase {
+final class TodoTests: AppTesCase {
 
-    private func deleteAllTodos(conn: PostgreSQLConnection) throws {
-        //try Todo.query(on: conn, withSoftDeleted: true).delete(force: true).wait()
-        let todos = Todo.query(on: conn).all()
+    private func deleteAllTodos() throws {
+        let todos = Todo.query(on: try dbConnection()).all()
         try todos.wait().forEach { todo in
-            try todo.delete(on: conn).wait()
+            try todo.delete(on: dbConnection()).wait()
         }
     }
     
+    func testFetchTodo() throws {
+        //let useCase = FetchTodoUseCase()
+        //let allTodos = useCase.fetch().wait()
+    }
+    
+    func testTodoDeletion() throws {
+        let connection = try dbConnection()
+        try deleteAllTodos()
+        let authObject = try UserTokenMock.userToken(db: connection)
 
-    func testTodoCreation() throws {
-        // Boot
-        let app = try AppMock.defaultTestApp()
-        try App.boot(app)
-
-        // Connect to DB
-        let conn = try app.newConnection(to: .psql).wait()
-        try deleteAllTodos(conn: conn)
         
-        let authObject = try UserTestGenerator.userToken(db: conn)
-        conn.close()
+        let user = try authObject.user.get(on: connection).wait()
+        let createUseCase = CreateTodoUseCase(user: user, db: connection)
+        let newTodo = try createUseCase.createTodo(Todo(title: "Homework")).wait()
 
-        let createTodoRequestBody = CreateTodoRequestBody(title: "")
-        let createTodoRequestContent = CreateTodoRequestContent(token: authObject.string, body: createTodoRequestBody)
-        let todoRequest = API.Todos<Routes.Todos>.createTodo(createTodoRequestContent)
+        let deleteTodoRequestContent = DeleteTodoRequestContent(
+            token: authObject.string,
+            body: DeleteTodoRequestBody(id: newTodo.id!)
+        )
+        let todoRequest = API.Todos<Routes.Todos>.delete(deleteTodoRequestContent)
 
         let response = try app.getResponse(request: try todoRequest.request())
-        // Response Data
+
         do {
-            switch try todoRequest.parse(data: response.body.data) {
-            case .createTodo(let responseContent):
-                XCTAssertGreaterThan(responseContent.id, 0)
-            }
-        } catch let responseError as ResponseError {
-            XCTFail("Failed creating user: \(responseError.reason)")
+            XCTAssertEqual(response.status.code, HTTPResponseStatus.ok.code)
         } catch {
             XCTFail("Failed decoding data: \(String(data: response.body.data ?? Data(), encoding: .utf8)!)")
         }
+    }
 
-        XCTAssert(!authObject.string.isEmpty)
+    func testTodoCreation() throws {
+        let connection = try dbConnection()
+        try deleteAllTodos()
+        
+        let authObject = try UserTokenMock.userToken(db: connection)
+
+        let createTodoRequestBody = CreateTodoRequestBody(title: "")
+        let createTodoRequestContent = CreateTodoRequestContent(
+            token: authObject.string,
+            body: createTodoRequestBody
+        )
+        let todoRequest = API.Todos<Routes.Todos>.create(createTodoRequestContent)
+
+        let response = try app.getResponse(request: try todoRequest.request())
+
+        do {
+            switch try todoRequest.parse(data: response.body.data) {
+            case .create(let responseContent):
+                XCTAssertGreaterThan(responseContent.id, 0)
+            default:
+                XCTFail("Failed parsing response")
+            }
+        } catch let responseError as ResponseError {
+            XCTFail("Failed creating todo: \(responseError.reason)")
+        } catch {
+            XCTFail("Failed decoding data: \(String(data: response.body.data ?? Data(), encoding: .utf8)!)")
+        }
     }
 }

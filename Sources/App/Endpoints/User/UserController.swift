@@ -2,35 +2,6 @@ import Crypto
 import Vapor
 import FluentPostgreSQL
 
-struct AuthenticateUserUseCase {
-    let user: User
-    let db: DatabaseConnectable
-    func authenticateUser() throws -> EventLoopFuture<UserToken> {
-        // create new token for this user
-        let token = try UserToken.create(userID: user.requireID())
-        // save and return token
-        return token.save(on: db)
-    }
-}
-
-struct CreateUserUseCase {
-    let user: CreateUserRequestContent
-    let db: DatabaseConnectable
-
-    func createUser() throws -> Future<User> {
-        // verify that passwords match 
-        guard user.password == user.verifyPassword else {
-            throw Abort(.badRequest, reason: "Password and verification must match.")
-        }
-        
-        // hash user's password using BCrypt
-        let hash = try BCrypt.hash(user.password)
-        // save new user
-        return User(id: nil, name: user.name, email: user.email, passwordHash: hash)
-            .save(on: db)
-    }
-}
-
 /// Creates new users and logs them in.
 final class UserController {
     /// Logs a user in, returning a token for accessing protected endpoints.

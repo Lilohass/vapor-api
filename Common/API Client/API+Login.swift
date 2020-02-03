@@ -12,19 +12,18 @@ extension API {
 }
 
 extension API.Login: APIRequest {
+
+    enum Parser: APIResponseParser {
+        case login(LoginResponseContent)
+    }
+
     func request() throws -> HTTPRequest {
         switch self {
         case .login(let loginRequest):
             var headers = HTTPHeaders()
             headers.basicAuthorization = BasicAuthorization(username: loginRequest.email, password: loginRequest.password)
-            return try .post(url: Endpoint.login,
-                             headers: headers,
-                             body: HTTPBody())
+            return .post(url: Endpoint.login, headers: headers, body: HTTPBody())
         }
-    }
-
-    enum Parser: APIResponseParser {
-        case login(LoginResponseContent)
     }
 
     func parseObject(data: Data) throws -> Parser {
@@ -35,11 +34,13 @@ extension API.Login: APIRequest {
     }
 }
 
+// MARK: - Request Content
 struct LoginRequestContent: Codable {
     let email: String
     let password: String
 }
 
+// MARK: - Response Content
 struct LoginResponseContent: Codable {
     let id: Int
     let string: String
@@ -69,9 +70,6 @@ extension DateFormatter {
   static let iso8601Full: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.Z"
-    //formatter.calendar = Calendar(identifier: .iso8601)
-    //formatter.timeZone = TimeZone(secondsFromGMT: 0)
-    //formatter.locale = Locale(identifier: "en_US_POSIX")
     return formatter
   }()
 }

@@ -12,15 +12,16 @@ extension API {
 }
 
 extension API.User: APIRequest {
+
+    enum Parser: APIResponseParser {
+        case createUser(CreateUserResponseContent)
+    }
+
     func request() throws -> HTTPRequest {
         switch self {
         case .createUser(let userRequest):
             return try .jsonPost(url: Endpoint.users, body: userRequest)
         }
-    }
-    
-    enum Parser: APIResponseParser {
-        case createUser(CreateUserResponseContent)
     }
     
     func parseObject(data: Data) throws -> Parser {
@@ -31,6 +32,7 @@ extension API.User: APIRequest {
     }
 }
 
+// MARK: - Request Content
 struct CreateUserRequestContent: Codable {
     let name: String
     let email: String
@@ -44,6 +46,7 @@ struct CreateUserRequestContent: Codable {
     }
 }
 
+// MARK: - Response Content
 struct CreateUserResponseContent: Codable {
     let name: String
     let email: String
